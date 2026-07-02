@@ -1,11 +1,10 @@
-﻿using MatriX.GST.Models;
-using Newtonsoft.Json;
+using System.Text.Json;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MatriX.GST;
+namespace MatriX.GST.Config;
 
 public class AppInit
 {
@@ -30,7 +29,12 @@ public class AppInit
 
                 if (cachesettings.Item2 != lastWriteTime)
                 {
-                    cachesettings.Item1 = JsonConvert.DeserializeObject<Setting>(File.ReadAllText(path));
+                    cachesettings.Item1 = JsonSerializer.Deserialize<Setting>(
+                        File.ReadAllText(path),
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
                     cachesettings.Item2 = lastWriteTime;
                 }
             }

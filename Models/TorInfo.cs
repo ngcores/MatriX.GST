@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ public class TorInfo
     [JsonIgnore]
     public Process process { get; set; }
 
-    public string process_log { get; set; } = string.Empty;
+    public StringBuilder process_log { get; set; } = new StringBuilder();
 
     public string exception { get; set; }
 
@@ -51,13 +52,13 @@ public class TorInfo
         try
         {
             IsDispose = true;
-            int _pid = process.Id;
+            int? _pid = process?.Id;
 
             #region process
             try
             {
-                process.Kill(true);
-                process.Dispose();
+                process?.Kill(true);
+                process?.Dispose();
             }
             catch { }
             #endregion
@@ -66,7 +67,9 @@ public class TorInfo
             try
             {
                 Bash.Run($"kill -9 $(ps axu | grep \"/sandbox/{user.userId}\" | grep -v grep | awk '{{print $2}}')");
-                Bash.Run($"kill -9 {_pid}");
+
+                if (_pid > 0)
+                    Bash.Run($"kill -9 {_pid}");
             }
             catch { }
 

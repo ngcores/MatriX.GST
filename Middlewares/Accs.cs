@@ -1,16 +1,22 @@
-﻿using MatriX.GST.Models;
+using MatriX.GST.Models;
 using MatriX.GST.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
-using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace MatriX.GST.Middlewares;
 
 public class Accs
 {
+    static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     #region Accs
     private readonly RequestDelegate _next;
 
@@ -56,7 +62,8 @@ public class Accs
             return httpContext.Response.WriteAsync("Bad AES payload");
         }
 
-        var userdata = JsonConvert.DeserializeObject<UserData>(json);
+        var userdata = JsonSerializer.Deserialize<UserData>(json, JsonOptions);
+        userdata.userId = Regex.Replace(userdata.userId, @"[^a-zA-Z0-9\\.-]", "_");
 
         httpContext.Features.Set(userdata);
         return _next(httpContext);

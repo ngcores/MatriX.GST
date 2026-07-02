@@ -1,4 +1,4 @@
-﻿namespace MatriX.GST.Models;
+namespace MatriX.GST.Config;
 
 public class Setting
 {

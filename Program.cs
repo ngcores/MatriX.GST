@@ -1,14 +1,14 @@
-using MatriX.GST.Middlewares;
-using MatriX.GST.Models;
+using System.Text.Json;
+using MatriX.GST.Config;
 using MatriX.GST.Services;
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MatriX.GST;
 
@@ -17,29 +17,29 @@ public class Program
     public static void Main(string[] args)
     {
         #region test payload
-        var jsonSettings = new JsonSerializerSettings
+        var settings = new JsonSerializerOptions
         {
-            NullValueHandling = NullValueHandling.Ignore,
-            DefaultValueHandling = DefaultValueHandling.Ignore
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
 
-        string json = JsonConvert.SerializeObject(new UserData()
+        string json = JsonSerializer.Serialize(new Models.UserData()
         {
             userId = "gstmandalorian",
             target = "gst",
             magnet = "magnet:?xt=urn:btih:2a18dd802983c38426854835a192c134c38ab84a",
             queryString = "index=1&audio=0",
             default_settings = "gst_settings.json"
-        }, jsonSettings);
+        }, settings);
 
         Console.WriteLine($"GST\n{json}\n\n{AesTo.Encrypt(json)}\n\n");
 
-        json = JsonConvert.SerializeObject(new UserData()
+        json = JsonSerializer.Serialize(new Models.UserData()
         {
             userId = "mandalorian",
             magnet = "magnet:?xt=urn:btih:2a18dd802983c38426854835a192c134c38ab84a",
             queryString = "index=1&play"
-        }, jsonSettings);
+        }, settings);
 
         Console.WriteLine($"Stream\n{json}\n\n{AesTo.Encrypt(json)}\n\n");
         #endregion
@@ -55,43 +55,6 @@ public class Program
         );
         #endregion
 
-        #region check node
-        ThreadPool.QueueUserWorkItem(async _ =>
-        {
-            while (true)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(20));
-
-                try
-                {
-                    foreach (var node in TorAPI.db.ToArray())
-                    {
-                        if (node.Value.countError >= 2 || DateTime.UtcNow.AddMinutes(-AppInit.settings.worknodetominutes) > node.Value.lastActive)
-                        {
-                            node.Value.Dispose();
-                            TorAPI.db.TryRemove(node.Key, out TorInfo torInfo);
-                        }
-                        else
-                        {
-                            if (node.Value.lastActive.AddSeconds(10) > DateTime.UtcNow)
-                                continue;
-
-                            if (await TorAPI.CheckPort(node.Value.port) == false)
-                            {
-                                node.Value.countError += 1;
-                            }
-                            else
-                            {
-                                node.Value.countError = 0;
-                            }
-                        }
-                    }
-                }
-                catch { }
-            }
-        });
-        #endregion
-
         CreateHostBuilder(null).Build().Run();
     }
 
@@ -101,6 +64,21 @@ public class Program
             {
                 logging.ClearProviders();
                 logging.SetMinimumLevel(LogLevel.None);
+            })
+            .ConfigureServices(services =>
+            {
+                services.AddMemoryCache();
+
+                services.AddHttpClient("ts")
+                    .ConfigurePrimaryHttpMessageHandler(CreateTsHandler);
+
+                services.AddHttpClient<TorClient>(client => { })
+                    .ConfigurePrimaryHttpMessageHandler(CreateTsHandler);
+
+                services.AddSingleton<PortService>();
+                services.AddSingleton<TorManager>();
+
+                services.AddHostedService<Background.TorCleanupService>();
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {
@@ -115,4 +93,16 @@ public class Program
 
                 webBuilder.UseStartup<Startup>();
             });
+
+    static HttpMessageHandler CreateTsHandler()
+    {
+        var handler = new HttpClientHandler()
+        {
+            AutomaticDecompression = DecompressionMethods.None,
+            AllowAutoRedirect = true
+        };
+
+        handler.ServerCertificateCustomValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
+        return handler;
+    }
 }
