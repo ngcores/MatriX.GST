@@ -142,13 +142,19 @@ public class TorManager
                     process.OutputDataReceived += (sender, args) =>
                     {
                         if (!string.IsNullOrEmpty(args.Data))
-                            info.process_log.AppendLine(args.Data);
+                        {
+                            lock (info.processLogLock)
+                                info.process_log.AppendLine(args.Data);
+                        }
                     };
 
                     process.ErrorDataReceived += (sender, args) =>
                     {
                         if (!string.IsNullOrEmpty(args.Data))
-                            info.process_log.AppendLine(args.Data);
+                        {
+                            lock (info.processLogLock)
+                                info.process_log.AppendLine(args.Data);
+                        }
                     };
 
                     info.process = process;

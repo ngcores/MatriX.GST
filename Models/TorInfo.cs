@@ -1,4 +1,5 @@
-﻿using MatriX.GST.Services;
+﻿using MatriX.GST.Config;
+using MatriX.GST.Services;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -30,6 +31,8 @@ public class TorInfo
     [JsonIgnore]
     public Process process { get; set; }
 
+    public readonly object processLogLock = new();
+
     public StringBuilder process_log { get; set; } = new StringBuilder();
 
     public string exception { get; set; }
@@ -43,16 +46,15 @@ public class TorInfo
     #endregion
 
     #region Dispose
-    bool IsDispose;
+    int _disposed;
 
     public void Dispose()
     {
-        if (IsDispose)
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
             return;
 
         try
         {
-            IsDispose = true;
             int? _pid = process?.Id;
 
             #region process
@@ -74,7 +76,7 @@ public class TorInfo
             }
             catch { }
 
-            Directory.Delete($"sandbox/{user.userId}", true);
+            Directory.Delete($"{AppInit.appfolder}/sandbox/{user.userId}", true);
             #endregion
 
             thread = null;

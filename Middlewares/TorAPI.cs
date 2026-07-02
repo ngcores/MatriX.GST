@@ -2,6 +2,7 @@ using MatriX.GST.Models;
 using MatriX.GST.Services;
 using Microsoft.AspNetCore.Http;
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -26,8 +27,14 @@ public class TorAPI
     {
         var userData = httpContext.Features.Get<UserData>();
 
-        var (info, errorNewToTS) = await torManager.GetOrCreateNodeAsync(userData)
-            .ConfigureAwait(false);
+        if (string.IsNullOrEmpty(userData.infohash) && string.IsNullOrEmpty(userData.magnet))
+        {
+            httpContext.Response.StatusCode = 400;
+            await httpContext.Response.WriteAsync("magnet/infohash empty", httpContext.RequestAborted);
+            return;
+        }
+
+        var (info, errorNewToTS) = await torManager.GetOrCreateNodeAsync(userData).ConfigureAwait(false);
 
         if (errorNewToTS != null)
         {
@@ -50,6 +57,8 @@ public class TorAPI
             }
         }
 
+        info.lastActive = DateTime.UtcNow;
+
         string infohash = 
             userData.infohash ?? 
             await torClient.GetHash(info, userData.magnet, httpContext.RequestAborted).ConfigureAwait(false);
@@ -59,8 +68,6 @@ public class TorAPI
             await httpContext.Response.WriteAsync("failed infohash", httpContext.RequestAborted).ConfigureAwait(false);
             return;
         }
-
-        info.lastActive = DateTime.UtcNow;
 
         string servUri = userData.target == "gst"
             ? $"http://127.0.0.1:{info.port}/gst/{infohash}/master.m3u8?{userData.queryString}"
@@ -111,7 +118,18 @@ public class TorAPI
             }
             else
             {
-                await torClient.CopyStreamAsync(httpContext, response).ConfigureAwait(false);
+                try
+                {
+                    await torClient.CopyStreamAsync(httpContext, response).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (httpContext.RequestAborted.IsCancellationRequested)
+                {
+                    // client disconnected
+                }
+                catch (IOException) when (httpContext.RequestAborted.IsCancellationRequested)
+                {
+                    // client disconnected
+                }
             }
         }
     }

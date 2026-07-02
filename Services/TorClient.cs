@@ -108,7 +108,8 @@ public class TorClient
                     if (header.Key.Equals("content-type", StringComparison.OrdinalIgnoreCase) ||
                         header.Key.Equals("content-length", StringComparison.OrdinalIgnoreCase) ||
                         header.Key.Equals("accept-ranges", StringComparison.OrdinalIgnoreCase) ||
-                        header.Key.Equals("content-range", StringComparison.OrdinalIgnoreCase))
+                        header.Key.Equals("content-range", StringComparison.OrdinalIgnoreCase) ||
+                        header.Key.Equals("location", StringComparison.OrdinalIgnoreCase))
                     {
                         if (!response.Headers.ContainsKey(header.Key))
                             response.Headers[header.Key] = header.Value.ToArray();
