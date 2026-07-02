@@ -14,6 +14,11 @@ public static class Extensions
         return builder.UseMiddleware<Accs>();
     }
 
+    public static IApplicationBuilder UseStatsAPI(this IApplicationBuilder builder)
+    {
+        return builder.UseMiddleware<StatsAPI>();
+    }
+
     public static IApplicationBuilder UseTorAPI(this IApplicationBuilder builder)
     {
         return builder.UseMiddleware<TorAPI>();

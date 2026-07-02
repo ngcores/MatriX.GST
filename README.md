@@ -157,3 +157,50 @@ function encrypt(text):
 
     return base64UrlEncode(encryptedBytes, removePadding = true)
 ```
+
+
+# /api/stats
+
+Статистика хранится только в памяти за последние 24 часа, с группировкой по `hour` и `userid`.
+
+Добавьте токен в `settings.json`:
+
+```json
+{
+  "statsToken": "secret-token"
+}
+```
+
+Запрос:
+
+```bash
+curl -H "Authorization: secret-token" http://IP:8590/api/stats
+```
+
+Формат `Bearer` тоже поддерживается:
+
+```bash
+curl -H "Authorization: Bearer secret-token" http://IP:8590/api/stats
+```
+
+Пример ответа:
+
+```json
+[
+  {
+    "hour": "2026-07-02T14:00:00Z",
+    "users": [
+      {
+        "userid": "mandalorian",
+        "ips": [
+          "127.0.0.1"
+        ],
+        "bytes": 123456,
+        "hashs": [
+          "2a18dd802983c38426854835a192c134c38ab84a"
+        ]
+      }
+    ]
+  }
+]
+```

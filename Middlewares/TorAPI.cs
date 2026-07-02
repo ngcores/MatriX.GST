@@ -15,12 +15,14 @@ public class TorAPI
 
     readonly TorManager torManager;
     readonly TorClient torClient;
+    readonly StatsService statsService;
 
-    public TorAPI(RequestDelegate next, TorManager torManager, TorClient torClient)
+    public TorAPI(RequestDelegate next, TorManager torManager, TorClient torClient, StatsService statsService)
     {
         _next = next;
         this.torManager = torManager;
         this.torClient = torClient;
+        this.statsService = statsService;
     }
 
     public async Task InvokeAsync(HttpContext httpContext)
@@ -68,6 +70,12 @@ public class TorAPI
             await httpContext.Response.WriteAsync("failed infohash", httpContext.RequestAborted).ConfigureAwait(false);
             return;
         }
+
+        var statsScope = statsService.TrackRequest(
+            userData.userId,
+            httpContext.Connection.RemoteIpAddress?.ToString(),
+            infohash
+        );
 
         string servUri = userData.target == "gst"
             ? $"http://127.0.0.1:{info.port}/gst/{infohash}/master.m3u8?{userData.queryString}"
@@ -120,7 +128,8 @@ public class TorAPI
             {
                 try
                 {
-                    await torClient.CopyStreamAsync(httpContext, response).ConfigureAwait(false);
+                    ulong bytes = await torClient.CopyStreamAsync(httpContext, response).ConfigureAwait(false);
+                    statsService.AddBytes(statsScope, bytes);
                 }
                 catch (OperationCanceledException) when (httpContext.RequestAborted.IsCancellationRequested)
                 {

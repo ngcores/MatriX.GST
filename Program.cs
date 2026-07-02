@@ -77,6 +77,7 @@ public class Program
 
                 services.AddSingleton<PortService>();
                 services.AddSingleton<TorManager>();
+                services.AddSingleton<StatsService>();
 
                 services.AddHostedService<Background.TorCleanupService>();
             })

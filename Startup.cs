@@ -20,6 +20,7 @@ public class Startup
         });
 
         app.UseModHeaders();
+        app.UseStatsAPI();
         app.UseAccs();
         app.UseTorAPI();
     }

@@ -103,8 +103,9 @@ public class TorClient
         return requestMessage;
     }
 
-    public async Task CopyStreamAsync(HttpContext context, HttpResponseMessage responseMessage)
+    public async Task<ulong> CopyStreamAsync(HttpContext context, HttpResponseMessage responseMessage)
     {
+        ulong bytesWritten = 0;
         var response = context.Response;
         response.StatusCode = (int)responseMessage.StatusCode;
 
@@ -134,18 +135,23 @@ public class TorClient
         await using (var responseStream = await responseMessage.Content.ReadAsStreamAsync(context.RequestAborted).ConfigureAwait(false))
         {
             if (!responseStream.CanRead)
-                return;
+                return bytesWritten;
 
             if (!response.Body.CanWrite)
-                return;
+                return bytesWritten;
 
             using (var pool = new BufferPool())
             {
                 int bytesRead;
 
                 while ((bytesRead = await responseStream.ReadAsync(pool.Buffer, context.RequestAborted).ConfigureAwait(false)) > 0)
+                {
                     await response.Body.WriteAsync(pool.Buffer, 0, bytesRead, context.RequestAborted).ConfigureAwait(false);
+                    bytesWritten += (ulong)bytesRead;
+                }
             }
         }
+
+        return bytesWritten;
     }
 }

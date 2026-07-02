@@ -25,4 +25,6 @@ public class Setting
     /// Использовать lsof для мониторинга системы
     /// </summary>
     public bool lsof { get; set; } = true;
+
+    public string authToken { get; set; }
 }
