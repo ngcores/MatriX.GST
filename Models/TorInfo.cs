@@ -1,11 +1,11 @@
-﻿using System;
+﻿using MatriX.GST.Services;
+using System;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using MatriX.GST.Config;
-using MatriX.GST.Services;
 
 namespace MatriX.GST.Models;
 
@@ -74,7 +74,7 @@ public class TorInfo
             }
             catch { }
 
-            Bash.Run($"rm -rf {AppInit.appfolder}/sandbox/{user.userId}");
+            Directory.Delete($"sandbox/{user.userId}", true);
             #endregion
 
             thread = null;

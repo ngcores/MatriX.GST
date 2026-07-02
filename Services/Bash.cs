@@ -16,7 +16,10 @@ public static class Bash
                 Arguments = $" -c \"{comand}\""
             };
 
-            var process = Process.Start(processInfo);
+            using var process = Process.Start(processInfo);
+            if (process == null)
+                return null;
+
             var outPut = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
 

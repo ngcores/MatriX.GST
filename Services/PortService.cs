@@ -103,14 +103,16 @@ public class PortService
                     {
                         client.Timeout = TimeSpan.FromSeconds(2);
 
-                        var response = await client.GetAsync($"http://127.0.0.1:{port}/echo");
-                        if (response.StatusCode == HttpStatusCode.OK)
+                        using (var response = await client.GetAsync($"http://127.0.0.1:{port}/echo"))
                         {
-                            string echo = await response.Content.ReadAsStringAsync();
-                            if (echo.StartsWith("MatriX."))
+                            if (response.StatusCode == HttpStatusCode.OK)
                             {
-                                servIsWork = true;
-                                break;
+                                string echo = await response.Content.ReadAsStringAsync();
+                                if (echo.StartsWith("MatriX."))
+                                {
+                                    servIsWork = true;
+                                    break;
+                                }
                             }
                         }
                     }

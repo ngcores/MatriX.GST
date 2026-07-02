@@ -29,13 +29,16 @@ public class AppInit
 
                 if (cachesettings.Item2 != lastWriteTime)
                 {
-                    cachesettings.Item1 = JsonSerializer.Deserialize<Setting>(
-                        File.ReadAllText(path),
-                        new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-                    cachesettings.Item2 = lastWriteTime;
+                    var setting = JsonSerializer.Deserialize<Setting>(File.ReadAllText(path), new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (setting != null)
+                    {
+                        cachesettings.Item1 = setting;
+                        cachesettings.Item2 = lastWriteTime;
+                    }
                 }
             }
             catch
@@ -46,7 +49,7 @@ public class AppInit
         }
         #endregion
 
-        updateSettings();
+        updateSettings(ignoreCatch: false);
 
         ThreadPool.QueueUserWorkItem(async _ =>
         {

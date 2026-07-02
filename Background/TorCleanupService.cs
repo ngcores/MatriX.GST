@@ -1,5 +1,6 @@
 using MatriX.GST.Services;
 using Microsoft.Extensions.Hosting;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,7 +21,14 @@ public class TorCleanupService : BackgroundService
         {
             await torManager.CleanupAsync();
 
-            await Task.Delay(20_000, stoppingToken);
+            try
+            {
+                await Task.Delay(20_000, stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
         }
     }
 }

@@ -47,7 +47,9 @@ public class TorManager
 
                 if (db.TryAdd(info.user.userId, info))
                 {
-                    info.taskCompletionSource = new TaskCompletionSource<bool>();
+                    info.taskCompletionSource = new TaskCompletionSource<bool>(
+                        TaskCreationOptions.RunContinuationsAsynchronously
+                    );
                 }
                 else
                 {
