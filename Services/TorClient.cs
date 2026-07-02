@@ -1,5 +1,6 @@
 using MatriX.GST.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Linq;
 using System.Net.Http;
@@ -14,10 +15,12 @@ namespace MatriX.GST.Services;
 public class TorClient
 {
     readonly HttpClient httpClient;
+    readonly IMemoryCache memory;
 
-    public TorClient(HttpClient httpClient)
+    public TorClient(HttpClient httpClient, IMemoryCache memory)
     {
         this.httpClient = httpClient;
+        this.memory = memory;
     }
 
     static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
@@ -29,6 +32,10 @@ public class TorClient
     {
         try
         {
+            string cacheKey = $"torhash:{ts.user.userId}:{ts.port}:{magnet}";
+            if (memory.TryGetValue(cacheKey, out string cachedHash))
+                return cachedHash;
+
             string body = JsonSerializer.Serialize(new
             {
                 action = "add",
@@ -61,6 +68,8 @@ public class TorClient
                         var json = JsonSerializer.Deserialize<TorrentAddResponse>(response, JsonOptions);
                         if (json == null || string.IsNullOrEmpty(json.hash))
                             return null;
+
+                        memory.Set(cacheKey, json.hash, TimeSpan.FromMinutes(1));
 
                         return json.hash;
                     }
@@ -124,20 +133,11 @@ public class TorClient
 
         await using (var responseStream = await responseMessage.Content.ReadAsStreamAsync(context.RequestAborted).ConfigureAwait(false))
         {
-            if (response.Body == null)
-                throw new ArgumentNullException("destination");
-
-            if (!responseStream.CanRead && !responseStream.CanWrite)
-                throw new ObjectDisposedException("ObjectDisposed_StreamClosed");
-
-            if (!response.Body.CanRead && !response.Body.CanWrite)
-                throw new ObjectDisposedException("ObjectDisposed_StreamClosed");
-
             if (!responseStream.CanRead)
-                throw new NotSupportedException("NotSupported_UnreadableStream");
+                return;
 
             if (!response.Body.CanWrite)
-                throw new NotSupportedException("NotSupported_UnwritableStream");
+                return;
 
             using (var pool = new BufferPool())
             {

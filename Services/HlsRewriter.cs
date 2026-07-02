@@ -1,5 +1,6 @@
 using MatriX.GST.Models;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace MatriX.GST.Services;
@@ -8,7 +9,8 @@ public static class HlsRewriter
 {
     static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
     };
 
     static readonly Regex HlsRegex = new Regex(
@@ -28,7 +30,9 @@ public static class HlsRewriter
                 maxSize = userData.maxSize,
                 infohash = infohash,
                 versionts = userData.versionts,
-                default_settings = userData.default_settings
+                default_settings = userData.default_settings == "default_settings.json"
+                    ? null
+                    : userData.default_settings
             }, JsonOptions);
 
             return m.Groups[1].Value + AesTo.Encrypt(payload) + (m.Groups[2].Value.EndsWith(".m4s") ? ".m4s" : ".mp4");

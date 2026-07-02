@@ -9,7 +9,7 @@ curl -s https://raw.githubusercontent.com/ngcores/MatriX.GST/master/install.sh |
   "port": 8590,
   "IPAddressAny": true,
   "worknodetominutes": 5,
-  "tsargs": "--pubipv4 внешний_ip"
+  "tsargs": "--pubipv4 внешний_ip-сервера"
 }
 ```
 

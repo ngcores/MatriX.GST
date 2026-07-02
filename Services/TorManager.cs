@@ -29,7 +29,9 @@ public class TorManager
 
     public async Task<(TorInfo, string)> GetOrCreateNodeAsync(UserData userData)
     {
-        TorInfo info;
+        if (db.TryGetValue(userData.userId, out TorInfo info))
+            return (info, null);
+
         string errorNewToTS = null;
         bool startNewTS = false;
 

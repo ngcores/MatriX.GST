@@ -26,11 +26,10 @@ public class PortService
         {
             while (true)
             {
+                await Task.Delay(250).ConfigureAwait(false);
+
                 if (!AppInit.settings.lsof)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                     continue;
-                }
 
                 string result = Bash.Run("lsof -i -P -n");
                 if (result != null)
