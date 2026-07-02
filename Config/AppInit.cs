@@ -11,7 +11,7 @@ public class AppInit
     static AppInit()
     {
         #region updateSettings
-        void updateSettings()
+        void updateSettings(bool ignoreCatch = true)
         {
             try
             {
@@ -38,7 +38,11 @@ public class AppInit
                     cachesettings.Item2 = lastWriteTime;
                 }
             }
-            catch { }
+            catch
+            {
+                if (!ignoreCatch)
+                    throw;
+            }
         }
         #endregion
 

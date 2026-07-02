@@ -25,19 +25,9 @@ public class TorAPI
     {
         var userData = httpContext.Features.Get<UserData>();
 
-        if (string.IsNullOrEmpty(userData?.userId))
-        {
-            await httpContext.Response.WriteAsync("user id empty", httpContext.RequestAborted).ConfigureAwait(false);
-            return;
-        }
-
         string inDir = AppInit.appfolder;
-        string version = string.IsNullOrEmpty(userData.versionts) ? "latest" : userData.versionts;
 
-        if (version != "latest" && !System.IO.File.Exists($"{inDir}/TorrServer/{version}"))
-            version = "latest";
-
-        var (info, errorNewToTS) = await torManager.GetOrCreateNodeAsync(userData, version)
+        var (info, errorNewToTS) = await torManager.GetOrCreateNodeAsync(userData)
             .ConfigureAwait(false);
 
         if (errorNewToTS != null)
@@ -85,9 +75,9 @@ public class TorAPI
                     return;
                 }
 
-                torClient.CopyHttpResponse(httpContext, response);
-
                 result = HlsRewriter.RewritePlaylist(result, infohash, userData);
+
+                httpContext.Response.StatusCode = (int)response.StatusCode;
                 httpContext.Response.ContentType = "application/vnd.apple.mpegurl; charset=utf-8";
                 await httpContext.Response.WriteAsync(result, httpContext.RequestAborted).ConfigureAwait(false);
             }

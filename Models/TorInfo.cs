@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using MatriX.GST.Config;
 using MatriX.GST.Services;
 
 namespace MatriX.GST.Models;
@@ -73,7 +74,7 @@ public class TorInfo
             }
             catch { }
 
-            Bash.Run($"rm -rf /home/matrixgst/sandbox/{user.userId}");
+            Bash.Run($"rm -rf {AppInit.appfolder}/sandbox/{user.userId}");
             #endregion
 
             thread = null;

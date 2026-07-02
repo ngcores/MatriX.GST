@@ -1,7 +1,6 @@
 using MatriX.GST.Models;
 using MatriX.GST.Services;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -20,12 +19,9 @@ public class Accs
     #region Accs
     private readonly RequestDelegate _next;
 
-    IMemoryCache memory;
-
-    public Accs(RequestDelegate next, IMemoryCache memory)
+    public Accs(RequestDelegate next)
     {
         _next = next;
-        this.memory = memory;
     }
     #endregion
 
@@ -62,7 +58,25 @@ public class Accs
             return httpContext.Response.WriteAsync("Bad AES payload");
         }
 
-        var userdata = JsonSerializer.Deserialize<UserData>(json, JsonOptions);
+        UserData userdata;
+
+        try
+        {
+            userdata = JsonSerializer.Deserialize<UserData>(json, JsonOptions);
+        }
+        catch
+        {
+            httpContext.Response.StatusCode = 403;
+            return httpContext.Response.WriteAsync("Bad JSON payload");
+        }
+
+        if (string.IsNullOrEmpty(userdata?.userId))
+        {
+            httpContext.Response.StatusCode = 401;
+            httpContext.Response.ContentType = "text/plain; charset=utf-8";
+            return httpContext.Response.WriteAsync("user id empty");
+        }
+
         userdata.userId = Regex.Replace(userdata.userId, @"[^a-zA-Z0-9\\.-]", "_");
 
         httpContext.Features.Set(userdata);

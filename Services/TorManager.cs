@@ -27,7 +27,7 @@ public class TorManager
         this.portService = portService;
     }
 
-    public async Task<(TorInfo, string)> GetOrCreateNodeAsync(UserData userData, string version)
+    public async Task<(TorInfo, string)> GetOrCreateNodeAsync(UserData userData)
     {
         TorInfo info;
         string errorNewToTS = null;
@@ -63,6 +63,10 @@ public class TorManager
         {
             try
             {
+                string version = string.IsNullOrEmpty(userData.versionts) ? "latest" : userData.versionts;
+                if (version != "latest" && !File.Exists($"{inDir}/TorrServer/{version}"))
+                    version = "latest";
+
                 await StartNewServerAsync(info, version).ConfigureAwait(false);
             }
             catch (Exception ex)

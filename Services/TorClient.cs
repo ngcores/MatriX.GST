@@ -94,7 +94,7 @@ public class TorClient
         return requestMessage;
     }
 
-    public void CopyHttpResponse(HttpContext context, HttpResponseMessage responseMessage)
+    public async Task CopyStreamAsync(HttpContext context, HttpResponseMessage responseMessage)
     {
         var response = context.Response;
         response.StatusCode = (int)responseMessage.StatusCode;
@@ -120,12 +120,6 @@ public class TorClient
 
         UpdateHeaders(responseMessage.Headers);
         UpdateHeaders(responseMessage.Content.Headers);
-    }
-
-    public async Task CopyStreamAsync(HttpContext context, HttpResponseMessage responseMessage)
-    {
-        var response = context.Response;
-        CopyHttpResponse(context, responseMessage);
 
         await using (var responseStream = await responseMessage.Content.ReadAsStreamAsync(context.RequestAborted).ConfigureAwait(false))
         {
